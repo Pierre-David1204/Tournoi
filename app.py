@@ -37,4 +37,4 @@ if st.button("Se connecter"):
 
     st.success(f"Connecté : {equipe_selection}")
 
-    st.switch_page("pages/1_Classement.py")import streamlit as st
+    st.switch_page("pages/1_Classement.py")
