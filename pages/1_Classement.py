@@ -2,28 +2,19 @@ import streamlit as st
 import pandas as pd
 from utils.supabase_client import supabase
 
-st.title("📊 Classement")
+if "robot" not in st.session_state:
+    st.warning("Veuillez vous connecter.")
+    st.switch_page("app.py")
 
 robot = st.session_state.robot
-poule_id = robot["poule_id"]
+
+st.title("Classement")
 
 robots = supabase.table("robots") \
     .select("*") \
-    .eq("poule_id", poule_id) \
+    .eq("poule_id", robot["poule_id"]) \
     .execute()
 
 df = pd.DataFrame(robots.data)
 
-df = df.sort_values(
-    ["points", "score_total"],
-    ascending=False
-)
-
-st.dataframe(df[[
-    "nom",
-    "points",
-    "victoires",
-    "nuls",
-    "defaites",
-    "score_total"
-]])
+st.dataframe(df)
