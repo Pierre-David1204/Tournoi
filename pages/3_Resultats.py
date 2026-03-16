@@ -11,10 +11,12 @@ st.title("📋 Résultats")
 matchs = supabase.table("matchs") \
     .select("*") \
     .eq("termine", True) \
+    .order("heure") \
     .execute()
 
 for m in matchs.data:
 
     st.write(
-        f"{m['robot1']} {m['score1']} - {m['score2']} {m['robot2']}"
+        f"{m['equipe1']} vs {m['equipe2']} "
+        f"(terrain {m['terrain']})"
     )
