@@ -7,32 +7,30 @@ key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6
 
 supabase = create_client(url, key)
 
-if "robot" not in st.session_state or st.session_state.robot is None:
-    st.warning("Veuillez vous connecter")
+if "equipe" not in st.session_state or st.session_state.equipe is None:
     st.switch_page("app.py")
 
-robot = st.session_state.robot
-poule_id = robot["poule_id"]
+equipe = st.session_state.equipe
+poule_id = equipe["poule_id"]
 
-st.title("📊 Classement")
+st.title("📊 Classement de la poule")
 
-robots = supabase.table("robots") \
+data = supabase.table("equipes") \
     .select("*") \
     .eq("poule_id", poule_id) \
     .execute()
 
-df = pd.DataFrame(robots.data)
+df = pd.DataFrame(data.data)
 
 df = df.sort_values(
-    ["points", "score_total"],
+    ["victoires", "manches_gagnees"],
     ascending=False
 )
 
 st.dataframe(df[[
     "nom",
-    "points",
     "victoires",
-    "nuls",
-    "defaites",
-    "score_total"
+    "manches_gagnees",
+    "manches_perdues"
 ]])
+
