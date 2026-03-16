@@ -1,5 +1,10 @@
 import streamlit as st
-from utils.supabase_client import supabase
+from supabase import create_client
+
+url = "https://yzupjrzhqmojefurpmrx.supabase.co"
+key = "TA_CLE"
+
+supabase = create_client(url, key)
 
 st.title("📋 Résultats")
 
@@ -10,20 +15,6 @@ matchs = supabase.table("matchs") \
 
 for m in matchs.data:
 
-    if m["division"] == "D1":
-
-        scores = supabase.table("scores_d1") \
-            .select("*") \
-            .eq("match_id", m["id"]) \
-            .execute()
-
-        st.write(scores.data)
-
-    else:
-
-        manches = supabase.table("scores_d2") \
-            .select("*") \
-            .eq("match_id", m["id"]) \
-            .execute()
-
-        st.write(manches.data)
+    st.write(
+        f"{m['robot1']} {m['score1']} - {m['score2']} {m['robot2']}"
+    )
