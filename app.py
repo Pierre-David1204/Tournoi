@@ -1,30 +1,40 @@
 import streamlit as st
 from supabase import create_client
 
+# connexion supabase
 url = "https://yzupjrzhqmojefurpmrx.supabase.co"
 key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6dXBqcnpocW1vamVmdXJwbXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTY0ODcsImV4cCI6MjA4ODk5MjQ4N30.4qYKmPfDagkicbC31aob3egY2msh7mzuk7ECRJ2-M1A"
 
 supabase = create_client(url, key)
 
-st.title("🤖 Tournoi Robot")
+st.title("🤖 Tournoi Robot - Connexion")
 
-if "robot" not in st.session_state:
-    st.session_state.robot = None
+# session
+if "equipe" not in st.session_state:
+    st.session_state.equipe = None
 
-robot_name = st.text_input("Nom du robot")
 
-if st.button("Connexion"):
+# récupérer les équipes
+data = supabase.table("equipes").select("*").order("nom").execute()
 
-    res = supabase.table("robots") \
-        .select("*") \
-        .eq("nom", robot_name) \
-        .execute()
+equipes = data.data
 
-    if res.data:
-        st.session_state.robot = res.data[0]
-        st.success("Connexion réussie")
-        st.switch_page("pages/1_Classement.py")
+noms_equipes = [e["nom"] for e in equipes]
 
-    else:
-        st.error("Robot inconnu")
 
+# menu déroulant
+equipe_selection = st.selectbox(
+    "Choisissez votre équipe",
+    noms_equipes
+)
+
+
+if st.button("Se connecter"):
+
+    equipe = next(e for e in equipes if e["nom"] == equipe_selection)
+
+    st.session_state.equipe = equipe
+
+    st.success(f"Connecté : {equipe_selection}")
+
+    st.switch_page("pages/1_Classement.py")import streamlit as st
