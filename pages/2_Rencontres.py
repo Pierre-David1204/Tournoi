@@ -1,3 +1,4 @@
+
 import streamlit as st
 from supabase import create_client
 
@@ -14,6 +15,12 @@ poule_id = equipe["poule_id"]
 
 st.title("⚔️ Matchs de la poule")
 
+# récupérer les équipes
+equipes_data = supabase.table("equipes").select("*").execute()
+
+equipes = {e["id"]: e["nom"] for e in equipes_data.data}
+
+# récupérer les matchs
 matchs = supabase.table("matchs") \
     .select("*") \
     .eq("poule_id", poule_id) \
@@ -22,6 +29,9 @@ matchs = supabase.table("matchs") \
 
 for m in matchs.data:
 
+    equipe1 = equipes.get(m["equipe1"], m["equipe1"])
+    equipe2 = equipes.get(m["equipe2"], m["equipe2"])
+
     statut = "⏳ à jouer"
 
     if m["termine"]:
@@ -29,5 +39,5 @@ for m in matchs.data:
 
     st.write(
         f"Terrain {m['terrain']} | {m['heure']} | "
-        f"{m['equipe1']} vs {m['equipe2']} | {statut}"
+        f"{equipe1} vs {equipe2} | {statut}"
     )
