@@ -1,5 +1,5 @@
-
 import streamlit as st
+import pandas as pd
 from supabase import create_client
 
 url = "https://yzupjrzhqmojefurpmrx.supabase.co"
@@ -13,31 +13,38 @@ if "equipe" not in st.session_state or st.session_state.equipe is None:
 equipe = st.session_state.equipe
 poule_id = equipe["poule_id"]
 
-st.title("⚔️ Matchs de la poule")
+st.title("📅 Planning des matchs")
 
-# récupérer les équipes
+# récupérer équipes
 equipes_data = supabase.table("equipes").select("*").execute()
-
 equipes = {e["id"]: e["nom"] for e in equipes_data.data}
 
-# récupérer les matchs
+# récupérer matchs
 matchs = supabase.table("matchs") \
     .select("*") \
     .eq("poule_id", poule_id) \
     .order("heure") \
     .execute()
 
-for m in matchs.data:
+df = pd.DataFrame(matchs.data)
 
-    equipe1 = equipes.get(m["equipe1"], m["equipe1"])
-    equipe2 = equipes.get(m["equipe2"], m["equipe2"])
+# convertir noms équipes
+df["Equipe1"] = df["equipe1"].map(equipes)
+df["Equipe2"] = df["equipe2"].map(equipes)
 
-    statut = "⏳ à jouer"
+# grouper par heure
+for heure, matchs_heure in df.groupby("heure"):
 
-    if m["termine"]:
-        statut = "✅ terminé"
+    st.subheader(heure)
 
-    st.write(
-        f"Terrain {m['terrain']} | {m['heure']} | "
-        f"{equipe1} vs {equipe2} | {statut}"
-    )
+    for _, m in matchs_heure.sort_values("terrain").iterrows():
+
+        statut = "⏳"
+
+        if m["termine"]:
+            statut = "✅"
+
+        st.write(
+            f"**Terrain {m['terrain']}** : "
+            f"{m['Equipe1']} vs {m['Equipe2']} {statut}"
+        )
