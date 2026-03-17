@@ -22,7 +22,7 @@ matchs = supabase.table("matchs") \
 # récupérer équipes
 equipes_data = supabase.table("equipes").select("*").execute()
 equipes = {e["id"]: e["nom"] for e in equipes_data.data}
-heure_affichee = pd.to_datetime(str(heure)).strftime("%H:%M")
+heure_affichee = pd.to_datetime(str(m["heure"])).strftime("%H:%M")
 
 for m in matchs.data:
 
