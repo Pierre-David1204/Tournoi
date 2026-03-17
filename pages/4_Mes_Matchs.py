@@ -18,9 +18,16 @@ matchs = supabase.table("matchs") \
     .select("*") \
     .execute()
 
+# récupérer équipes
+equipes_data = supabase.table("equipes").select("*").execute()
+equipes = {e["id"]: e["nom"] for e in equipes_data.data}
+
 for m in matchs.data:
 
     if m["equipe1"] == id_equipe or m["equipe2"] == id_equipe:
+
+        equipe1 = equipes.get(m["equipe1"], m["equipe1"])
+        equipe2 = equipes.get(m["equipe2"], m["equipe2"])
 
         statut = "⏳ à jouer"
 
@@ -29,5 +36,8 @@ for m in matchs.data:
 
         st.write(
             f"Terrain {m['terrain']} | {m['heure']} | "
-            f"{m['equipe1']} vs {m['equipe2']} | {statut}"
+            f"{equipe1} vs {equipe2} | {statut}"
         )
+
+
+
