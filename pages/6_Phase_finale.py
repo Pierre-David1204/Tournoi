@@ -3,80 +3,67 @@ import pandas as pd
 from supabase import create_client
 
 url = "https://yzupjrzhqmojefurpmrx.supabase.co"
-key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6dXBqcnpocW1vamVmdXJwbXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTY0ODcsImV4cCI6MjA4ODk5MjQ4N30.4qYKmPfDagkicbC31aob3egY2msh7mzuk7ECRJ2-M1A"
+key = "TA_CLE"
 
 supabase = create_client(url, key)
 
 st.title("🏆 Phase finale")
 
-# récupérer équipes
-data = supabase.table("equipes").select("*").execute()
+# récupérer les équipes
+equipes_data = supabase.table("equipes").select("*").execute()
+equipes = {e["id"]: e["nom"] for e in equipes_data.data}
+
+# récupérer les matchs de phase finale
+data = supabase.table("phase_finale").select("*").execute()
+
+if not data.data:
+    st.info("La phase finale n'est pas encore générée.")
+    st.stop()
+
 df = pd.DataFrame(data.data)
 
-# classement dans chaque poule
-df = df.sort_values(
-    ["poule_id","points","victoires","manches_gagnees"],
-    ascending=[True,False,False,False]
-)
+# convertir ID -> noms
+df["Equipe1"] = df["equipe1"].map(equipes)
+df["Equipe2"] = df["equipe2"].map(equipes)
 
-df["rang"] = df.groupby("poule_id").cumcount() + 1
+# afficher par tour
+tours = ["Huitieme","Quart","Demi","Finale"]
 
-premiers = df[df["rang"] == 1]
-deuxiemes = df[df["rang"] == 2]
-troisiemes = df[df["rang"] == 3]
-quatriemes = df[df["rang"] == 4]
+cols = st.columns(len(tours))
 
-best4 = quatriemes.sort_values(
-    ["points","victoires","manches_gagnees"],
-    ascending=False
-).head(1)
+for i, tour in enumerate(tours):
 
-qualifies = pd.concat([premiers,deuxiemes,troisiemes,best4])
+    with cols[i]:
 
-st.subheader("Equipes qualifiées")
+        st.subheader(tour)
 
-st.dataframe(qualifies[["nom","poule_id","points"]])
+        matchs = df[df["tour"] == tour]
 
-# génération automatique
-if st.button("Générer les huitièmes"):
+        if matchs.empty:
+            st.write("—")
 
-    teams = qualifies.sample(frac=1).reset_index(drop=True)
+        for _, m in matchs.iterrows():
 
-    matchs = []
-    used = set()
+            score = ""
 
-    for i in range(len(teams)):
+            if m["termine"]:
+                score = f"{m['score1']} - {m['score2']}"
 
-        if i in used:
-            continue
-
-        for j in range(i+1,len(teams)):
-
-            if j in used:
-                continue
-
-            if teams.loc[i,"poule_id"] != teams.loc[j,"poule_id"]:
-
-                matchs.append(
-                    (teams.loc[i,"id"],teams.loc[j,"id"])
-                )
-
-                used.add(i)
-                used.add(j)
-                break
-
-    matchs = matchs[:8]
-
-    for i,m in enumerate(matchs):
-
-        supabase.table("phase_finale").insert({
-
-            "tour":"Huitieme",
-            "match_num":i+1,
-
-            "equipe1":m[0],
-            "equipe2":m[1]
-
-        }).execute()
-
-    st.success("Huitièmes générés !")
+            st.markdown(
+                f"""
+                <div style="
+                border:1px solid #ddd;
+                padding:10px;
+                border-radius:8px;
+                margin-bottom:10px;
+                text-align:center;
+                background:#f8f9fa;
+                ">
+                {m['Equipe1']} <br>
+                vs <br>
+                {m['Equipe2']} <br>
+                <b>{score}</b>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
