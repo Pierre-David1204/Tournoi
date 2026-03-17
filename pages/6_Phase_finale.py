@@ -13,7 +13,7 @@ st.title("🏆 Phase finale")
 data = supabase.table("equipes").select("*").execute()
 df = pd.DataFrame(data.data)
 
-# calcul qualifiés
+# classement poules
 df = df.sort_values(
     ["poule_id","points","victoires","manches_gagnees"],
     ascending=[True,False,False,False]
@@ -38,51 +38,74 @@ qualifies = qualifies.sort_values(
 
 teams = qualifies["nom"].tolist()
 
-# arbre tournoi
-st.header("Huitièmes")
+# bracket HTML
+bracket_html = f"""
+<style>
+.bracket {{
+display:flex;
+justify-content:center;
+gap:40px;
+font-size:16px;
+}}
 
-col1,col2,col3,col4 = st.columns(4)
+.round {{
+display:flex;
+flex-direction:column;
+gap:30px;
+}}
 
-with col1:
-    st.write(teams[0])
-    st.write("vs")
-    st.write(teams[15])
+.match {{
+border:1px solid #ccc;
+padding:8px;
+border-radius:6px;
+background:#f9f9f9;
+width:150px;
+text-align:center;
+}}
+</style>
 
-    st.write("---")
+<div class="bracket">
 
-    st.write(teams[7])
-    st.write("vs")
-    st.write(teams[8])
+<div class="round">
+<h4>Huitièmes</h4>
 
-with col2:
-    st.write(teams[4])
-    st.write("vs")
-    st.write(teams[11])
+<div class="match">{teams[0]}<br>vs<br>{teams[15]}</div>
+<div class="match">{teams[7]}<br>vs<br>{teams[8]}</div>
+<div class="match">{teams[4]}<br>vs<br>{teams[11]}</div>
+<div class="match">{teams[3]}<br>vs<br>{teams[12]}</div>
+<div class="match">{teams[5]}<br>vs<br>{teams[10]}</div>
+<div class="match">{teams[2]}<br>vs<br>{teams[13]}</div>
+<div class="match">{teams[6]}<br>vs<br>{teams[9]}</div>
+<div class="match">{teams[1]}<br>vs<br>{teams[14]}</div>
 
-    st.write("---")
+</div>
 
-    st.write(teams[3])
-    st.write("vs")
-    st.write(teams[12])
+<div class="round">
+<h4>Quarts</h4>
 
-with col3:
-    st.write(teams[5])
-    st.write("vs")
-    st.write(teams[10])
+<div class="match">Quart 1</div>
+<div class="match">Quart 2</div>
+<div class="match">Quart 3</div>
+<div class="match">Quart 4</div>
 
-    st.write("---")
+</div>
 
-    st.write(teams[2])
-    st.write("vs")
-    st.write(teams[13])
+<div class="round">
+<h4>Demi</h4>
 
-with col4:
-    st.write(teams[6])
-    st.write("vs")
-    st.write(teams[9])
+<div class="match">Demi 1</div>
+<div class="match">Demi 2</div>
 
-    st.write("---")
+</div>
 
-    st.write(teams[1])
-    st.write("vs")
-    st.write(teams[14])
+<div class="round">
+<h4>Finale</h4>
+
+<div class="match">Finale</div>
+
+</div>
+
+</div>
+"""
+
+st.markdown(bracket_html, unsafe_allow_html=True)
