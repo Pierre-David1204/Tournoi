@@ -10,39 +10,73 @@ supabase = create_client(url, key)
 st.title("🏆 Phase finale")
 
 # récupérer équipes
-equipes_data = supabase.table("equipes").select("*").execute()
-equipes = {e["id"]: e["nom"] for e in equipes_data.data}
-
-# récupérer matchs
-data = supabase.table("phase_finale").select("*").execute()
-
-if not data.data:
-    st.info("La phase finale n'est pas encore générée.")
-    st.stop()
-
+data = supabase.table("equipes").select("*").execute()
 df = pd.DataFrame(data.data)
 
-# vérifier colonnes
-required_cols = ["equipe1", "equipe2"]
-for col in required_cols:
-    if col not in df.columns:
-        st.error(f"Colonne manquante dans la table : {col}")
-        st.stop()
+# classement dans chaque poule
+df = df.sort_values(
+    ["poule_id","points","victoires","manches_gagnees"],
+    ascending=[True,False,False,False]
+)
 
-df["Equipe1"] = df["equipe1"].map(equipes)
-df["Equipe2"] = df["equipe2"].map(equipes)
+df["rang"] = df.groupby("poule_id").cumcount() + 1
 
-for tour, matchs in df.groupby("tour"):
+premiers = df[df["rang"] == 1]
+deuxiemes = df[df["rang"] == 2]
+troisiemes = df[df["rang"] == 3]
+quatriemes = df[df["rang"] == 4]
 
-    st.header(tour)
+best4 = quatriemes.sort_values(
+    ["points","victoires","manches_gagnees"],
+    ascending=False
+).head(1)
 
-    for _, m in matchs.iterrows():
+qualifies = pd.concat([premiers,deuxiemes,troisiemes,best4])
 
-        score = ""
+st.subheader("Equipes qualifiées")
 
-        if m["termine"]:
-            score = f"{m['score1']} - {m['score2']}"
+st.dataframe(qualifies[["nom","poule_id","points"]])
 
-        st.write(
-            f"{m['Equipe1']} vs {m['Equipe2']} {score}"
-        )
+# génération automatique
+if st.button("Générer les huitièmes"):
+
+    teams = qualifies.sample(frac=1).reset_index(drop=True)
+
+    matchs = []
+    used = set()
+
+    for i in range(len(teams)):
+
+        if i in used:
+            continue
+
+        for j in range(i+1,len(teams)):
+
+            if j in used:
+                continue
+
+            if teams.loc[i,"poule_id"] != teams.loc[j,"poule_id"]:
+
+                matchs.append(
+                    (teams.loc[i,"id"],teams.loc[j,"id"])
+                )
+
+                used.add(i)
+                used.add(j)
+                break
+
+    matchs = matchs[:8]
+
+    for i,m in enumerate(matchs):
+
+        supabase.table("phase_finale").insert({
+
+            "tour":"Huitieme",
+            "match_num":i+1,
+
+            "equipe1":m[0],
+            "equipe2":m[1]
+
+        }).execute()
+
+    st.success("Huitièmes générés !")
