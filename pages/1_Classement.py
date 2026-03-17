@@ -16,7 +16,6 @@ mon_equipe = equipe["nom"]
 
 st.title("📊 Classement de la poule")
 
-# récupérer équipes de la poule
 data = supabase.table("equipes") \
     .select("*") \
     .eq("poule_id", poule_id) \
@@ -52,20 +51,33 @@ df = df[[
     "Manches -"
 ]]
 
+# style des lignes
+def style_lignes(row):
 
-def highlight_team(row):
+    styles = [""] * len(row)
+
+    position = row["#"]
+
+    if position <= 3:
+        styles = ["background-color: #d4edda"] * len(row)   # vert
+    elif position == 4:
+        styles = ["background-color: #fff3cd"] * len(row)   # orange
+    else:
+        styles = ["background-color: #f8f9fa"] * len(row)   # gris
+
     if row["Equipe"] == mon_equipe:
-        return ["font-weight: bold"] * len(row)
-    return [""] * len(row)
+        styles = [s + "; font-weight: bold" for s in styles]
 
-styled = df.style.apply(highlight_team, axis=1)
+    return styles
+
+styled = df.style.apply(style_lignes, axis=1)
 
 st.dataframe(styled, use_container_width=True)
 
 
-# --------------------------
-# CLASSEMENT DES 4EMES
-# --------------------------
+# -------------------------
+# Classement des 4èmes
+# -------------------------
 
 st.title("🏁 Classement des 4èmes")
 
@@ -73,7 +85,6 @@ data_all = supabase.table("equipes").select("*").execute()
 
 df_all = pd.DataFrame(data_all.data)
 
-# classement dans chaque poule
 df_all = df_all.sort_values(
     ["poule_id", "points", "victoires", "manches_gagnees"],
     ascending=[True, False, False, False]
@@ -107,4 +118,13 @@ quatriemes = quatriemes[[
     "Manches +"
 ]]
 
-st.dataframe(quatriemes, use_container_width=True)
+# couleur pour meilleur 4e
+def style_quatrieme(row):
+
+    if row["Rang"] == 1:
+        return ["background-color: #d4edda"] * len(row)
+    return [""] * len(row)
+
+styled_q = quatriemes.style.apply(style_quatrieme, axis=1)
+
+st.dataframe(styled_q, use_container_width=True)
