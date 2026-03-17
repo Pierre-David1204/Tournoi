@@ -14,7 +14,7 @@ st.title("🏆 Phase finale")
 data = supabase.table("equipes").select("*").execute()
 df = pd.DataFrame(data.data)
 
-# classement dans chaque poule
+# classement poules
 df = df.sort_values(
     ["poule_id","points","victoires","manches_gagnees"],
     ascending=[True,False,False,False]
@@ -28,7 +28,7 @@ deuxiemes = df[df["rang"] == 2]
 troisiemes = df[df["rang"] == 3]
 quatriemes = df[df["rang"] == 4]
 
-meilleur4 = quatriemes.sort_values(
+best4 = quatriemes.sort_values(
     ["points","victoires","manches_gagnees"],
     ascending=False
 ).head(1)
@@ -37,12 +37,12 @@ qualifies = pd.concat([
     premiers,
     deuxiemes,
     troisiemes,
-    meilleur4
+    best4
 ])
 
-# éviter rencontres même poule
 teams = qualifies.sample(frac=1).reset_index(drop=True)
 
+# éviter mêmes poules
 matchs = []
 used = set()
 
@@ -51,22 +51,18 @@ for i in range(len(teams)):
     if i in used:
         continue
 
-    for j in range(i+1, len(teams)):
+    for j in range(i+1,len(teams)):
 
         if j in used:
             continue
 
         if teams.loc[i,"poule_id"] != teams.loc[j,"poule_id"]:
 
-            matchs.append(
-                (
-                    teams.loc[i,"nom"],
-                    teams.loc[j,"nom"]
-                )
-            )
+            matchs.append((teams.loc[i],teams.loc[j]))
 
             used.add(i)
             used.add(j)
+
             break
 
 matchs = matchs[:8]
@@ -78,81 +74,67 @@ with col1:
 
     st.subheader("Huitièmes")
 
+    winners_8 = []
+
     for m in matchs:
 
-        st.markdown(
-            f"""
-            <div style="
-            border:1px solid #ddd;
-            padding:12px;
-            margin-bottom:10px;
-            border-radius:8px;
-            text-align:center;
-            background:#f8f9fa;
-            ">
-            {m[0]} <br> vs <br> {m[1]}
-            </div>
-            """,
-            unsafe_allow_html=True
+        equipe1 = m[0]["nom"]
+        equipe2 = m[1]["nom"]
+
+        choice = st.radio(
+            f"{equipe1} vs {equipe2}",
+            [equipe1,equipe2],
+            key=f"huitieme_{equipe1}_{equipe2}"
         )
+
+        winners_8.append(choice)
 
 with col2:
 
     st.subheader("Quarts")
 
-    for _ in range(4):
+    winners_4 = []
 
-        st.markdown(
-            """
-            <div style="
-            border:1px dashed #bbb;
-            padding:12px;
-            margin-bottom:10px;
-            border-radius:8px;
-            text-align:center;
-            ">
-            à déterminer
-            </div>
-            """,
-            unsafe_allow_html=True
+    for i in range(0,len(winners_8),2):
+
+        e1 = winners_8[i]
+        e2 = winners_8[i+1]
+
+        choice = st.radio(
+            f"{e1} vs {e2}",
+            [e1,e2],
+            key=f"quart_{i}"
         )
+
+        winners_4.append(choice)
 
 with col3:
 
     st.subheader("Demi")
 
-    for _ in range(2):
+    winners_2 = []
 
-        st.markdown(
-            """
-            <div style="
-            border:1px dashed #bbb;
-            padding:12px;
-            margin-bottom:10px;
-            border-radius:8px;
-            text-align:center;
-            ">
-            à déterminer
-            </div>
-            """,
-            unsafe_allow_html=True
+    for i in range(0,len(winners_4),2):
+
+        e1 = winners_4[i]
+        e2 = winners_4[i+1]
+
+        choice = st.radio(
+            f"{e1} vs {e2}",
+            [e1,e2],
+            key=f"demi_{i}"
         )
+
+        winners_2.append(choice)
 
 with col4:
 
     st.subheader("Finale")
 
-    st.markdown(
-        """
-        <div style="
-        border:2px solid gold;
-        padding:16px;
-        border-radius:10px;
-        text-align:center;
-        font-weight:bold;
-        ">
-        🏆 Finale
-        </div>
-        """,
-        unsafe_allow_html=True
+    champion = st.radio(
+        f"{winners_2[0]} vs {winners_2[1]}",
+        [winners_2[0],winners_2[1]],
+        key="finale"
     )
+
+    st.success(f"🏆 Champion : {champion}")
