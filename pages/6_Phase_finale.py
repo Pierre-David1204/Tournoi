@@ -15,46 +15,34 @@ equipes = {e["id"]: e["nom"] for e in equipes_data.data}
 
 # récupérer matchs
 data = supabase.table("phase_finale").select("*").execute()
+
+if not data.data:
+    st.info("La phase finale n'est pas encore générée.")
+    st.stop()
+
 df = pd.DataFrame(data.data)
+
+# vérifier colonnes
+required_cols = ["equipe1", "equipe2"]
+for col in required_cols:
+    if col not in df.columns:
+        st.error(f"Colonne manquante dans la table : {col}")
+        st.stop()
 
 df["Equipe1"] = df["equipe1"].map(equipes)
 df["Equipe2"] = df["equipe2"].map(equipes)
 
-# affichage par tour
 for tour, matchs in df.groupby("tour"):
 
     st.header(tour)
 
-    cols = st.columns(4)
-
-    for i, m in enumerate(matchs.iterrows()):
-
-        m = m[1]
-
-        col = cols[i % 4]
+    for _, m in matchs.iterrows():
 
         score = ""
 
         if m["termine"]:
             score = f"{m['score1']} - {m['score2']}"
 
-        with col:
-
-            st.markdown(
-                f"""
-                <div style="
-                border:1px solid #ddd;
-                padding:12px;
-                border-radius:8px;
-                text-align:center;
-                background:#f8f9fa;
-                margin-bottom:10px;
-                ">
-                {m['Equipe1']} <br>
-                vs <br>
-                {m['Equipe2']} <br>
-                <b>{score}</b>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        st.write(
+            f"{m['Equipe1']} vs {m['Equipe2']} {score}"
+        )
