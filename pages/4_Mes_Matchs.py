@@ -21,6 +21,7 @@ matchs = supabase.table("matchs") \
 # récupérer équipes
 equipes_data = supabase.table("equipes").select("*").execute()
 equipes = {e["id"]: e["nom"] for e in equipes_data.data}
+heure_affichee = pd.to_datetime(str(heure)).strftime("%H:%M")
 
 for m in matchs.data:
 
@@ -35,9 +36,8 @@ for m in matchs.data:
             statut = "✅ terminé"
 
         st.write(
-            f"Terrain {m['terrain']} | {m['heure']} | "
+            f"Terrain {m['terrain']} | {m['heure_affichee']} | "
             f"{equipe1} vs {equipe2} | {statut}"
         )
-
 
 
