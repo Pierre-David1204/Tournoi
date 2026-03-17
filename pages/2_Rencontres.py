@@ -35,6 +35,10 @@ df["Equipe2"] = df["equipe2"].map(equipes)
 # grouper par heure
 for heure, matchs_heure in df.groupby("heure"):
 
+    heure_affichee = pd.to_datetime(str(heure)).strftime("%H:%M")
+
+    st.subheader(heure_affichee)
+
     st.subheader(heure)
 
     for _, m in matchs_heure.sort_values("terrain").iterrows():
