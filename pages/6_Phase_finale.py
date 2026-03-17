@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import random
 from supabase import create_client
 
 url = "https://yzupjrzhqmojefurpmrx.supabase.co"
@@ -13,7 +14,7 @@ st.title("🏆 Phase finale")
 data = supabase.table("equipes").select("*").execute()
 df = pd.DataFrame(data.data)
 
-# classement poules
+# classement dans chaque poule
 df = df.sort_values(
     ["poule_id","points","victoires","manches_gagnees"],
     ascending=[True,False,False,False]
@@ -21,91 +22,137 @@ df = df.sort_values(
 
 df["rang"] = df.groupby("poule_id").cumcount() + 1
 
-top3 = df[df["rang"] <= 3]
+# qualifiés
+premiers = df[df["rang"] == 1]
+deuxiemes = df[df["rang"] == 2]
+troisiemes = df[df["rang"] == 3]
 quatriemes = df[df["rang"] == 4]
 
-best4 = quatriemes.sort_values(
+meilleur4 = quatriemes.sort_values(
     ["points","victoires","manches_gagnees"],
     ascending=False
 ).head(1)
 
-qualifies = pd.concat([top3,best4])
+qualifies = pd.concat([
+    premiers,
+    deuxiemes,
+    troisiemes,
+    meilleur4
+])
 
-qualifies = qualifies.sort_values(
-    ["points","victoires","manches_gagnees"],
-    ascending=False
-)
+# éviter rencontres même poule
+teams = qualifies.sample(frac=1).reset_index(drop=True)
 
-teams = qualifies["nom"].tolist()
+matchs = []
+used = set()
 
-# bracket HTML
-bracket_html = f"""
-<style>
-.bracket {{
-display:flex;
-justify-content:center;
-gap:40px;
-font-size:16px;
-}}
+for i in range(len(teams)):
 
-.round {{
-display:flex;
-flex-direction:column;
-gap:30px;
-}}
+    if i in used:
+        continue
 
-.match {{
-border:1px solid #ccc;
-padding:8px;
-border-radius:6px;
-background:#f9f9f9;
-width:150px;
-text-align:center;
-}}
-</style>
+    for j in range(i+1, len(teams)):
 
-<div class="bracket">
+        if j in used:
+            continue
 
-<div class="round">
-<h4>Huitièmes</h4>
+        if teams.loc[i,"poule_id"] != teams.loc[j,"poule_id"]:
 
-<div class="match">{teams[0]}<br>vs<br>{teams[15]}</div>
-<div class="match">{teams[7]}<br>vs<br>{teams[8]}</div>
-<div class="match">{teams[4]}<br>vs<br>{teams[11]}</div>
-<div class="match">{teams[3]}<br>vs<br>{teams[12]}</div>
-<div class="match">{teams[5]}<br>vs<br>{teams[10]}</div>
-<div class="match">{teams[2]}<br>vs<br>{teams[13]}</div>
-<div class="match">{teams[6]}<br>vs<br>{teams[9]}</div>
-<div class="match">{teams[1]}<br>vs<br>{teams[14]}</div>
+            matchs.append(
+                (
+                    teams.loc[i,"nom"],
+                    teams.loc[j,"nom"]
+                )
+            )
 
-</div>
+            used.add(i)
+            used.add(j)
+            break
 
-<div class="round">
-<h4>Quarts</h4>
+matchs = matchs[:8]
 
-<div class="match">Quart 1</div>
-<div class="match">Quart 2</div>
-<div class="match">Quart 3</div>
-<div class="match">Quart 4</div>
+# affichage bracket
+col1,col2,col3,col4 = st.columns(4)
 
-</div>
+with col1:
 
-<div class="round">
-<h4>Demi</h4>
+    st.subheader("Huitièmes")
 
-<div class="match">Demi 1</div>
-<div class="match">Demi 2</div>
+    for m in matchs:
 
-</div>
+        st.markdown(
+            f"""
+            <div style="
+            border:1px solid #ddd;
+            padding:12px;
+            margin-bottom:10px;
+            border-radius:8px;
+            text-align:center;
+            background:#f8f9fa;
+            ">
+            {m[0]} <br> vs <br> {m[1]}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-<div class="round">
-<h4>Finale</h4>
+with col2:
 
-<div class="match">Finale</div>
+    st.subheader("Quarts")
 
-</div>
+    for _ in range(4):
 
-</div>
-"""
+        st.markdown(
+            """
+            <div style="
+            border:1px dashed #bbb;
+            padding:12px;
+            margin-bottom:10px;
+            border-radius:8px;
+            text-align:center;
+            ">
+            à déterminer
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-st.markdown(bracket_html, unsafe_allow_html=True)
+with col3:
+
+    st.subheader("Demi")
+
+    for _ in range(2):
+
+        st.markdown(
+            """
+            <div style="
+            border:1px dashed #bbb;
+            padding:12px;
+            margin-bottom:10px;
+            border-radius:8px;
+            text-align:center;
+            ">
+            à déterminer
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+with col4:
+
+    st.subheader("Finale")
+
+    st.markdown(
+        """
+        <div style="
+        border:2px solid gold;
+        padding:16px;
+        border-radius:10px;
+        text-align:center;
+        font-weight:bold;
+        ">
+        🏆 Finale
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
